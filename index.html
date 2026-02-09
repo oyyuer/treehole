@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>树洞 - 私人情绪空间</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500&display=swap');
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Noto Serif SC', serif;
+            overflow: hidden;
+        }
+
+        /* 全局背景图设置 */
+        .bg-main {
+            background-image: url('IMG_3004.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* 为右上角按钮提供定位 */
+        }
+
+        /* 动画过渡 */
+        .fade-in { animation: fadeIn 0.6s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 首页粉红色按钮 */
+        .btn-pink {
+            background-color: #E68BA0;
+            color: white;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .btn-pink:hover {
+            background-color: #d67b90;
+            transform: scale(1.02);
+        }
+
+        /* 记录页方形米色容器 */
+        .beige-modal {
+            background-color: #FDFBF5;
+            border: 1px solid #D1C7B7;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            padding: 2.5rem;
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* ===================== 🎵 BGM UI ===================== */
+        .sound-toggle {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 22px;
+            cursor: pointer;
+            opacity: 0.75;
+            transition: opacity 0.2s, transform 0.2s;
+            user-select: none;
+            z-index: 60;
+        }
+        .sound-toggle:hover {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+
+        /* =====================  正念呼吸 Overlay ===================== */
+        #mindfulness-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+        }
+
+        .mind-bg {
+            position: absolute;
+            inset: 0;
+            transition: background 0.35s ease;
+        }
+        /* 浅色米白主题 */
+        .mind-bg.light {
+            background: radial-gradient(ellipse at center, rgba(253,251,245,0.98), rgba(245,241,232,0.99));
+        }
+        /* 深色夜间主题 */
+        .mind-bg.dark {
+            background: radial-gradient(ellipse at center, rgba(25,25,28,0.92), rgba(0,0,0,0.98));
+        }
+
+        .mind-shell {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flower-wrap{
+    position:relative;
+    width:min(72vw,360px);
+    height:min(72vw,360px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+        /* 花朵图：保持“扫描颗粒质感”+柔光 */
+      .flower-img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+  animation: bloom 6s ease-in-out infinite;
+  will-change: transform, opacity;
+
+  /* PNG 专用：轻柔、不抢背景 */
+  filter:
+    saturate(1.02)
+    brightness(1.02)
+    drop-shadow(0 6px 14px rgba(150,120,100,.18));
+}
+
+
+        /* 深色主题下，阴影与亮度微调（不影响浅色） */
+        .dark-theme .flower-img{
+            filter: contrast(1.05) saturate(1.06) brightness(1.03) drop-shadow(0 10px 26px rgba(0,0,0,.35));
+        }
+
+        /* 颗粒叠层：纸感/粉尘感 */
+        .flower-grain{
+  display: none;
+}
+
+
+        .dark-theme .flower-grain{
+            mix-blend-mode: screen;
+            opacity: .32;
+        }
+
+        .mind-text{
+            position:absolute;
+            bottom: -42px;
+            left: 50%;
+            transform: translateX(-50%);
+            letter-spacing: .2em;
+            font-size: 14px;
+            user-select:none;
+            transition: color .25s ease;
+        }
+        /* 正念倒计时 */
+.mind-timer{
+    position: absolute;
+    bottom: -68px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    letter-spacing: .15em;
+    opacity: .55;
+    user-select: none;
+    transition: color .25s ease, opacity .25s ease;
+}
+
+.light-theme .mind-timer{
+    color: rgba(90,70,60,.65);
+}
+
+.dark-theme .mind-timer{
+    color: rgba(255,255,255,.55);
+}
+
+        .light-theme .mind-text { color: rgba(60,50,45,.75); }
+        .dark-theme  .mind-text { color: rgba(255,255,255,.72); }
+
+        .mind-top-left, .mind-top-right{
+            position: absolute;
+            top: 18px;
+            font-size: 12px;
+            letter-spacing: .12em;
+            user-select: none;
+            z-index: 10;
+        }
+        .mind-top-left{
+            left: 18px;
+        }
+        .mind-top-right{
+            right: 18px;
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+
+        .mind-btn{
+            padding: 8px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.25);
+            background: rgba(255,255,255,.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: transform .15s ease, opacity .15s ease;
+            opacity: .85;
+        }
+        .mind-btn:hover{ transform: scale(1.03); opacity: 1; }
+
+        .light-theme .mind-btn{
+            border: 1px solid rgba(90,70,60,.22);
+            background: rgba(255,255,255,.55);
+        }
+        .dark-theme .mind-btn{
+            border: 1px solid rgba(255,255,255,.22);
+            background: rgba(255,255,255,.06);
+        }
+
+        @keyframes bloom{
+            0%   { transform: scale(.92); opacity:.92; }
+            25%  { transform: scale(1.00); opacity:1; }
+            50%  { transform: scale(1.07); opacity:1; }
+            75%  { transform: scale(1.00); opacity:1; }
+            100% { transform: scale(.92); opacity:.92; }
+        }
+        @keyframes grainMove{
+            0%   { transform: translate3d(-1px,-1px,0); }
+            50%  { transform: translate3d(1px,1px,0);  }
+            100% { transform: translate3d(-1px,-1px,0); }
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+
+<body class="bg-stone-100">
+
+    <!-- 🎵 BGM（与原逻辑完全解耦） -->
+    <audio id="bgm" src="bgm.mp3" loop autoplay muted playsinline></audio>
+
+    <div class="bg-main">
+
+        <!-- 🎵 右上角声音按钮 -->
+        <div id="soundToggle" class="sound-toggle">🔇</div>
+
+        <!-- 首页 -->
+        <div id="page-home" class="flex flex-col items-center gap-6 fade-in">
+            <button onclick="showPage('input')" class="btn-pink px-10 py-4 rounded-lg text-xl font-medium tracking-widest shadow-lg">
+                ＋ 今日记录
+            </button>
+
+            <!-- 一分钟正念 -->
+            <button onclick="startMindfulness()" class="text-white text-lg underline underline-offset-8 decoration-white/50 hover:text-white/80 transition-colors">
+                一分钟呼吸
+            </button>
+
+            <button onclick="showHistory()" class="text-white text-lg underline underline-offset-8 decoration-white/50 hover:text-white/80 transition-colors">
+                阅览往昔
+            </button>
+        </div>
+
+        <!-- 输入页 -->
+        <div id="page-input" class="hidden beige-modal fade-in">
+            <p class="text-xl text-stone-700 mb-6 text-center font-medium">今天有什么想留下的吗？</p>
+            <textarea id="record-text"
+                class="w-full h-40 bg-white/50 border border-stone-200 rounded p-4 focus:ring-1 focus:ring-stone-300 focus:outline-none text-stone-600 leading-relaxed resize-none mb-6"
+                placeholder="在这里写下..." autofocus></textarea>
+
+            <div class="flex flex-col items-center gap-4">
+                <div class="flex gap-4 w-full">
+                    <button onclick="showPage('home')" class="flex-1 py-3 text-stone-400 hover:text-stone-600 transition-colors">取消</button>
+                    <button onclick="handleRecord()" class="flex-1 py-3 bg-stone-100 border border-stone-200 text-stone-600 rounded-lg hover:bg-stone-200 transition-all font-medium">存入</button>
+                </div>
+                <label class="flex items-center gap-2 text-stone-400 cursor-pointer text-xs mt-2">
+                    <input type="checkbox" id="only-record" class="rounded border-stone-300"> 只记录，不需要回应
+                </label>
+            </div>
+        </div>
+
+        <!-- 反馈页 -->
+        <div id="page-feedback" class="hidden beige-modal fade-in text-center">
+            <div id="animal-container" class="mb-6 flex justify-center text-5xl"></div>
+            <div id="ai-response" class="text-lg leading-loose text-stone-600 italic px-2"></div>
+            <button onclick="showPage('home')" class="mt-8 text-stone-400 hover:text-stone-600 underline text-sm">回到首页</button>
+        </div>
+
+        <!-- 历史页 -->
+        <div id="page-history" class="hidden beige-modal fade-in max-h-[80vh] flex flex-col">
+            <h2 class="text-center text-stone-500 mb-6 tracking-widest font-medium border-bottom border-stone-100 pb-2">— 往昔记录 —</h2>
+            <div id="history-list" class="overflow-y-auto flex-1 pr-2 space-y-8 hide-scrollbar"></div>
+            <button onclick="showPage('home')" class="mt-6 text-stone-400 hover:text-stone-600 text-sm">关闭</button>
+        </div>
+
+    </div>
+
+    <!--  正念呼吸 Overlay（浅/深主题可切换并记忆） -->
+    <div id="mindfulness-overlay" class="hidden">
+        <div id="mindBg" class="mind-bg"></div>
+
+        <div id="mindThemeShell" class="mind-shell light-theme">
+            <div class="mind-top-left">
+                <span id="mindModeLabel" class="mind-btn">正念 · 60秒</span>
+            </div>
+
+            <div class="mind-top-right">
+                <button id="themeToggleBtn" class="mind-btn" type="button">切换背景</button>
+                <button id="mindExitBtn" class="mind-btn" type="button">退出</button>
+            </div>
+
+            <div class="flower-wrap">
+                <!-- 确保同目录存在 flower.png（用你发的那张图即可） -->
+                <img id="mindFlower" src="flower.png" alt="mind flower" class="flower-img" />
+                <div class="flower-grain"></div>
+                <div class="mind-text" id="mindText">吸气</div>
+                 <div class="mind-timer" id="mindTimer">60</div>
+        </div>
+    </div>
+
+    <script>
+        /* ===================== 🎵 BGM（完全独立，不删你原逻辑） ===================== */
+        const bgm = document.getElementById('bgm');
+        const soundToggle = document.getElementById('soundToggle');
+        const BGM_PREF_KEY = 'tree_hollow_bgm_muted';
+
+        // 读取用户偏好：true=静音，false=开声
+        let userMuted = localStorage.getItem(BGM_PREF_KEY);
+        userMuted = userMuted === null ? true : (userMuted === 'true');
+
+        function updateSoundIcon() {
+            soundToggle.innerText = userMuted ? '🔇' : '🔊';
+        }
+
+        function setMuted(nextMuted) {
+            userMuted = nextMuted;
+            bgm.muted = userMuted;
+            localStorage.setItem(BGM_PREF_KEY, String(userMuted));
+            updateSoundIcon();
+        }
+
+        // 页面加载：尝试播放（静音更容易被允许）
+        window.addEventListener('load', () => {
+            bgm.volume = 0.55;
+            bgm.muted = userMuted; // 应用偏好
+            updateSoundIcon();
+            bgm.play().catch(()=>{});
+        });
+
+        // 第一次用户交互：如果用户并未选择静音，则自动开声
+        document.addEventListener('click', () => {
+            if (!userMuted) {
+                bgm.muted = false;
+                updateSoundIcon();
+            }
+        }, { once: true });
+
+        // 手动开关
+        soundToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setMuted(!userMuted);
+            bgm.play().catch(()=>{});
+        });
+
+        /* =====================  正念呼吸（浅/深主题切换并记忆） ===================== */
+        const mindOverlay = document.getElementById('mindfulness-overlay');
+        const mindBg = document.getElementById('mindBg');
+        const mindShell = document.getElementById('mindThemeShell');
+        const mindText = document.getElementById('mindText');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const mindExitBtn = document.getElementById('mindExitBtn');
+
+        const MIND_THEME_KEY = 'tree_hollow_mind_theme'; // 'light' | 'dark'
+        let mindTheme = localStorage.getItem(MIND_THEME_KEY) || 'light';
+
+        function applyMindTheme(theme) {
+            mindTheme = theme;
+            localStorage.setItem(MIND_THEME_KEY, mindTheme);
+
+            mindBg.classList.remove('light', 'dark');
+            mindBg.classList.add(mindTheme);
+
+            mindShell.classList.remove('light-theme', 'dark-theme');
+            mindShell.classList.add(mindTheme === 'light' ? 'light-theme' : 'dark-theme');
+        }
+
+        applyMindTheme(mindTheme);
+
+        let mindTimer = null;
+let mindPhaseTimer = null;
+let mindCountInterval = null; 
+
+
+        function startMindfulness() {
+            // 打开 overlay
+            mindOverlay.classList.remove('hidden');
+            applyMindTheme(mindTheme);
+
+            // 60秒呼吸结构：吸10 停20 呼20 待10
+            const phases = [
+                { t: 10, label: "吸气" },
+                { t: 20, label: "停一停" },
+                { t: 20, label: "呼气" },
+                { t: 10, label: "就这样待着" },
+            ];
+
+            let i = 0;
+            mindText.innerText = phases[0].label;
+
+            function nextPhase() {
+                if (i >= phases.length) return;
+                mindText.innerText = phases[i].label;
+                const dur = phases[i].t * 1000;
+                i++;
+                mindPhaseTimer = setTimeout(nextPhase, dur);
+            }
+
+            clearTimeout(mindTimer);
+            clearTimeout(mindPhaseTimer);
+            nextPhase();
+// ===== 60 秒倒计时 =====
+const timerEl = document.getElementById('mindTimer');
+let remaining = 60;
+timerEl.innerText = remaining;
+
+// 清理旧的 interval（防止重复进入）
+clearInterval(mindCountInterval);
+
+mindCountInterval = setInterval(() => {
+    remaining--;
+    timerEl.innerText = remaining;
+
+    if (remaining <= 0) {
+        clearInterval(mindCountInterval);
+        mindCountInterval = null;
+    }
+}, 1000);
+
+            mindTimer = setTimeout(() => stopMindfulness(), 60000);
+        }
+
+        function stopMindfulness() {
+            mindOverlay.classList.add('hidden');
+            clearTimeout(mindTimer);
+            clearTimeout(mindPhaseTimer);
+            clearInterval(mindCountInterval);
+
+            mindTimer = null;
+            mindPhaseTimer = null;
+            mindCountInterval = null;
+ 
+        }
+
+        themeToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            applyMindTheme(mindTheme === 'light' ? 'dark' : 'light');
+        });
+
+        mindExitBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stopMindfulness();
+        });
+
+        // 防止 overlay 点击穿透影响底层首次交互逻辑
+        mindOverlay.addEventListener('click', (e) => {
+            // 点背景不退出，只阻止穿透
+            e.stopPropagation();
+        });
+
+        /* ===================== ✅ 你原本树洞逻辑：保留 + 仅增强回应规则 ===================== */
+        const config = {
+            joy: { animal: '🐶', color: '#FCD34D' },
+            anger: { animal: '🦁', color: '#86EFAC' },
+            sadness: { animal: '🐰', color: '#F9A8D4' },
+            peace: { animal: '🐱', color: '#D1D5DB' },
+            mixed: { animal: '🐻', color: '#D97706' }
+        };
+
+        function showPage(pageId) {
+            document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+        }
+
+        function handleRecord() {
+            const text = document.getElementById('record-text').value.trim();
+            const onlyRecord = document.getElementById('only-record').checked;
+            if (!text) return;
+
+            const emotion = analyzeEmotion(text);
+            const response = onlyRecord ? "" : getAIResponse(emotion, text);
+
+            const history = JSON.parse(localStorage.getItem('tree_hollow_data') || '[]');
+            history.unshift({
+                content: text,
+                date: new Date().toLocaleString('zh-CN', { month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' }),
+                emotion: emotion,
+                response: response
+            });
+            localStorage.setItem('tree_hollow_data', JSON.stringify(history));
+
+            if (onlyRecord) {
+                showPage('home');
+            } else {
+                renderFeedback(emotion, response);
+            }
+            document.getElementById('record-text').value = '';
+        }
+
+        function analyzeEmotion(text) {
+            if (/(开心|快乐|棒|哈哈|谢)/.test(text)) return "joy";
+            if (/(气|怒|不公|讨厌|凭什么|委屈)/.test(text)) return "anger";
+            if (/(难过|累|哭|无聊|疲惫|心碎)/.test(text)) return "sadness";
+            if (/(平淡|记录|茶|云|简单|平常)/.test(text)) return "peace";
+            return "mixed";
+        }
+
+        /* ============ 个性化短回应（规则升级，不删你的机制，只增强） ============ */
+        function getAIResponse(emotion, text) {
+            const intensity =
+                text.length < 18 ? 'light' :
+                text.length < 70 ? 'medium' : 'heavy';
+
+            const signals = {
+                hasQuestion: /(\?|？)/.test(text),
+                hasSigh: /(唉|哎|唔|算了|不想|懒得)/.test(text),
+                hasNeedHug: /(想要|需要|抱抱|安慰|陪陪)/.test(text),
+                hasSelfBlame: /(是不是我|都是我|我不好|我不行|我太)/.test(text),
+                hasOverwhelm: /(撑不住|崩溃|受不了|太难了|压不动)/.test(text)
+            };
+
+            const bank = {
+                joy: {
+                    light: [
+                        "我收到这一点点亮光了。把它留在这里，好吗？",
+                        "今天的你很可爱。就让这份好心情多待一会儿。"
+                    ],
+                    medium: [
+                        "这份开心很真实。我替你把它好好收藏起来。",
+                        "你能感受到快乐，说明你在好好活着。继续保持。"
+                    ],
+                    heavy: [
+                        "你把一整段光亮都带来了。别急，让它慢慢照着你。",
+                        "这么多喜悦写下来很珍贵。以后回看，会很温柔。"
+                    ]
+                },
+                anger: {
+                    light: [
+                        "你有权不舒服。你的边界是值得被尊重的。",
+                        "我听到了。你不需要立刻变得“懂事”。"
+                    ],
+                    medium: [
+                        "这份愤怒像是在保护你。你正在为自己站出来。",
+                        "你不是无理取闹，你是在捍卫自己的感受。"
+                    ],
+                    heavy: [
+                        "我听见你在强烈地说：这不应该发生在我身上。",
+                        "先别急着讲道理。你可以先把火放在这里，我替你看着。"
+                    ]
+                },
+                sadness: {
+                    light: [
+                        "我在。你不需要把话说完，也没关系。",
+                        "就算只写这一点点，我也会认真接住。"
+                    ],
+                    medium: [
+                        "这些难过不是你的错。你已经很努力了。",
+                        "你可以慢一点。情绪不需要被催促。"
+                    ],
+                    heavy: [
+                        "这些话一定在你心里压了一会儿了。你能写出来很不容易。",
+                        "我在这里。你不用立刻好起来，我们先一起呼一口气。"
+                    ]
+                },
+                peace: {
+                    light: [
+                        "嗯，我在听。平静本身就是一种力量。",
+                        "这样轻轻地记录，也很好。"
+                    ],
+                    medium: [
+                        "你在认真生活的缝隙里，给自己留了一个位置。",
+                        "这一刻很安静，但不空。它在慢慢滋养你。"
+                    ],
+                    heavy: [
+                        "你把日常写得很完整。你在给自己搭一个安全的家。",
+                        "这份平静像一盏小灯。它不会轰轰烈烈，但会一直亮。"
+                    ]
+                },
+                mixed: {
+                    light: [
+                        "好复杂，但没关系。你可以只把一小片放进来。",
+                        "不用理清顺序。把它倒出来就好。"
+                    ],
+                    medium: [
+                        "我听见了矛盾与拉扯。它们并不说明你脆弱。",
+                        "你正在经历很多层的感受。我们先慢一点。"
+                    ],
+                    heavy: [
+                        "这么多东西同时压着你，真的会很累。我在这里陪你放一放。",
+                        "你不需要一个人把所有都扛住。先把重量交给树洞一点点。"
+                    ]
+                }
+            };
+
+            // 基础句（按情绪×强度）
+            const baseList = (bank[emotion] && bank[emotion][intensity]) ? bank[emotion][intensity] : ["我在这里。你可以慢慢说。"];
+            let line1 = pick(baseList);
+
+            // 轻微个性化补充（不分析原因、不冒犯）
+            let line2 = "";
+            if (signals.hasSelfBlame) line2 = "别急着责怪自己。你已经在尽力了。";
+            else if (signals.hasOverwhelm) line2 = "如果现在很满，就先做一件很小的事：把肩膀放松一下。";
+            else if (signals.hasNeedHug) line2 = "给你一个很轻的抱抱（如果你愿意）。";
+            else if (signals.hasQuestion) line2 = "你不需要立刻找到答案。先允许自己停在这里。";
+            else if (signals.hasSigh) line2 = "你可以先不用“解决”。先被理解就够了。";
+
+            // 微行动（可选、极小）
+            const microActions = {
+                joy:    ["把手放在胸口，感受一下这份暖。", "轻轻笑一下就好。"],
+                anger:  ["慢慢呼气一次，把下巴放松。", "握紧再松开拳头一次。"],
+                sadness:["把肩膀放下来，呼一口长气。", "喝一口水也算照顾自己。"],
+                peace:  ["眨眨眼，看看此刻你身边的光。", "允许自己这样安静一会儿。"],
+                mixed:  ["先选一个词形容现在：紧/乱/累/空。", "闭眼三秒，再回来。"]
+            };
+            const action = pick(microActions[emotion] || ["先呼一口气。"]);
+
+            // 组合输出（短、治愈、不说教）
+            const parts = [line1];
+            if (line2) parts.push(line2);
+            parts.push(action);
+
+            return parts.join("\n");
+        }
+
+        function pick(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function renderFeedback(emotion, response) {
+            document.getElementById('animal-container').innerText = config[emotion].animal;
+            document.getElementById('ai-response').innerText = response;
+            showPage('feedback');
+        }
+
+        function showHistory() {
+            const history = JSON.parse(localStorage.getItem('tree_hollow_data') || '[]');
+            const list = document.getElementById('history-list');
+
+            list.innerHTML = history.length === 0
+                ? `<p class="text-center text-stone-300 italic py-10">这里还是空的。</p>`
+                : history.map(item => `
+                    <div class="border-l-2 border-stone-200 pl-4 py-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-lg">${config[item.emotion].animal}</span>
+                            <span class="text-[10px] text-stone-300 uppercase">${item.date}</span>
+                        </div>
+                        <p class="text-stone-600 text-sm mb-2">${item.content}</p>
+                        ${item.response ? `<div class="text-[12px] text-stone-400 italic bg-stone-50 p-2 rounded whitespace-pre-line">树洞：${item.response}</div>` : ''}
+                    </div>
+                `).join('');
+            showPage('history');
+        }
+    </script>
+</body>
+</html>
